@@ -3,29 +3,25 @@ import * as assert from 'assert-plus';
 import { types } from 'util';
 
 const $middleware = Symbol('middleware');
-const $final = Symbol('final');
 
 export type Middleware<T> = (it: T) => T | Promise<T>;
 export type Final<T, R> = (it: T) => Promise<R>;
 
-export class Pipeline<T, R> {
-  private [$final]: Final<T, R>;
+export class Pipeline<T> {
   private [$middleware]: Middleware<T>[];
 
-  constructor(final: Final<T, R>, pipe?: Middleware<T>[]) {
-    assert.ok(typeof final === 'function', 'final (Final) is required');
-    this[$final] = final;
+  constructor(pipe?: Middleware<T>[]) {
     this[$middleware] = pipe || [];
   }
 
-  add(middleware: Middleware<T> | Middleware<T>[]): Pipeline<T, R> {
+  add(middleware: Middleware<T> | Middleware<T>[]): Pipeline<T> {
     middleware = Array.isArray(middleware) ? middleware : [middleware];
-    return new Pipeline(this[$final], this[$middleware].concat(middleware));
+    return new Pipeline(this[$middleware].concat(middleware));
   }
 
-  async push(item: T): Promise<R> {
+  async push<R>(item: T, final?: Final<T, R>): Promise<T | R> {
+    assert.optionalFunc(final, 'final');
     const pipe = this[$middleware];
-    const final = this[$final];
     let it: T | Promise<T> = item;
     if (pipe && pipe.length) {
       const len = pipe.length;
@@ -41,6 +37,6 @@ export class Pipeline<T, R> {
         }
       }
     }
-    return await final(it as T);
+    return final ? await final(it as T) : it;
   }
 }

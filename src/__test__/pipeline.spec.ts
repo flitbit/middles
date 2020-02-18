@@ -7,20 +7,8 @@ describe('Pipeline', () => {
   };
 
   describe('.ctor', () => {
-    it('throws when not final undefined', () => {
-      expect(() => {
-        new Pipeline<boolean, boolean>(undefined);
-      }).to.throw('final (Final) is required');
-    });
-
-    it('throws when not final null', () => {
-      expect(() => {
-        new Pipeline<boolean, boolean>(null);
-      }).to.throw('final (Final) is required');
-    });
-
-    it('succeeds when final specified', () => {
-      const pipe = new Pipeline<boolean, boolean>(final);
+    it('succeeds', () => {
+      const pipe = new Pipeline<boolean>();
       expect(pipe).to.be.ok;
     });
   });
@@ -42,39 +30,39 @@ describe('Pipeline', () => {
       return n + 1;
     };
     it('does not throw', async () => {
-      const pipe = new Pipeline<boolean, boolean>(final);
-      const res = await pipe.push(true);
+      const pipe = new Pipeline<boolean>();
+      const res = await pipe.push(true, final);
       expect(res).to.be.false;
     });
     it('calls all middleware and the final', async () => {
-      const pipe = new Pipeline<number, number>(incp)
+      const pipe = new Pipeline<number>()
         .add(inc)
         .add(inc)
         .add(inc)
         .add(incp)
         .add(inc)
         .add(inc);
-      const res = await pipe.push(0);
+      const res = await pipe.push(0, incp);
       expect(res).to.eql(7);
     });
     it('propagates any error to the caller (2)', async () => {
       try {
-        const pipe = new Pipeline<number, number>(incp)
+        const pipe = new Pipeline<number>()
           .add(click)
           .add(click)
           .add(boom)
           .add(click)
           .add(click)
           .add(click);
-        return await pipe.push(0);
+        return await pipe.push(0, incp);
       } catch (e) {
         expect(e.message).to.eql('boom 2');
       }
     });
     it('propagates any error to the caller (final)', async () => {
       try {
-        const pipe = new Pipeline<number, number>(boomp).add([click, click, click, click, click]).add(click);
-        return await pipe.push(0);
+        const pipe = new Pipeline<number>().add([click, click, click, click, click]).add(click);
+        return await pipe.push(0, boomp);
       } catch (e) {
         expect(e.message).to.eql('boom 6');
       }
