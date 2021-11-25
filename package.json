@@ -2,77 +2,76 @@
   "name": "middles",
   "version": "0.0.3",
   "description": "Another small middleware pipeline library for Nodejs.",
-  "main": "dist/index.js",
-  "keywords": [
-    "middleware",
-    "pipeline",
-    "pipe"
-  ],
-  "author": "phillip@flitbit.com",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/flitbit/middles.git"
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
   },
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc --build tsconfig.json",
-    "clean": "rimraf dist .nyc_output coverage",
-    "lint": "eslint src --ext .js,.ts,.json",
-    "preversion": "npm run build",
+    "clean": "shx rm -rf coverage dist tmp docs",
     "prebuild": "npm run lint",
+    "build": "rollup -c ",
+    "build:watch": "rollup -c -w",
+    "buildall": "npm run build && npm run docs",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "prejest": "npm run lint",
+    "jest": "jest",
     "pretest": "npm run build",
-    "test": "nyc mocha src/**/*.spec.ts",
-    "test:watch": "nodemon --watch 'src/**/*' -e ts,tsx --exec npm run test",
-    "ci": "npm run test",
-    "docs": "typedoc"
+    "test": "cross-env TS_NODE_COMPILER_OPTIONS='{ \"module\": \"commonjs\", \"noEmit\": false }' jest --coverage",
+    "test:watch": "onchange --initial \"*.js\" \"*.json\" \"src/**/*.ts\" -- npm run test",
+    "cilint": "eslint . --ext .ts,.tsx --format junit --output-file ./reports/eslint/eslint.xml",
+    "precibuild": "npm run cilint",
+    "cibuild": "npm run buildall",
+    "preci": "npm run cibuild",
+    "ci": "cross-env TS_NODE_COMPILER_OPTIONS='{ \"module\": \"commonjs\", \"noEmit\": false }' jest --config jest.ci.config.js --coverage",
+    "docs": "typedoc && shx cp _config.yml docs/",
+    "docs:watch": "onchange --initial \"*.md\" \"src/**/*.ts\" --npm run docs"
   },
   "devDependencies": {
-    "@types/amqplib": "^0.5.13",
+    "@rollup/plugin-commonjs": "^21.0.1",
+    "@rollup/plugin-node-resolve": "^13.0.6",
     "@types/assert-plus": "^1.0.4",
-    "@types/chai": "^4.2.9",
-    "@types/mocha": "^7.0.1",
-    "@typescript-eslint/eslint-plugin": "^2.20.0",
-    "@typescript-eslint/parser": "^2.20.0",
-    "chai": "^4.2.0",
-    "eslint": "^6.8.0",
-    "eslint-config-prettier": "^6.10.0",
-    "eslint-plugin-import": "^2.20.1",
-    "eslint-plugin-json": "^2.0.1",
-    "eslint-plugin-mocha": "^6.2.2",
-    "eslint-plugin-prettier": "^3.1.2",
-    "lodash": "^4.17.15",
-    "mocha": "^7.0.1",
-    "nodemon": "^2.0.2",
-    "nyc": "^15.0.0",
-    "prettier": "^1.19.1",
-    "rimraf": "^3.0.2",
-    "source-map-support": "^0.5.16",
-    "ts-node": "^8.6.2",
-    "typedoc": "^0.16.10",
-    "typescript": "^3.7.5"
-  },
-  "nyc": {
-    "include": [
-      "src/**/*.ts"
-    ],
-    "exclude": [
-      "src/__test__/**/*.ts"
-    ],
-    "extension": [
-      ".ts",
-      ".tsx"
-    ],
-    "require": [
-      "ts-node/register"
-    ],
-    "reporter": [
-      "text-summary",
-      "html"
-    ],
-    "sourceMap": true,
-    "instrument": true
+    "@types/debug": "^4.1.7",
+    "@types/jest": "^27.0.3",
+    "@types/node": "^16.11.10",
+    "@typescript-eslint/eslint-plugin": "^5.4.0",
+    "@typescript-eslint/parser": "^5.4.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.3.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-jest": "^25.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "jest": "^27.3.1",
+    "onchange": "^7.1.0",
+    "prettier": "^2.5.0",
+    "rollup": "^2.60.1",
+    "rollup-plugin-peer-deps-external": "^2.2.4",
+    "rollup-plugin-terser": "^7.0.2",
+    "rollup-plugin-typescript2": "^0.31.1",
+    "shx": "^0.3.3",
+    "ts-jest": "^27.0.7",
+    "ts-node": "^10.4.0",
+    "typedoc": "^0.22.10",
+    "typescript": "^4.5.2"
   },
   "dependencies": {
     "assert-plus": "^1.0.0"
-  }
+  },
+  "author": "Phillip Clark <phillip@flitbit.com>",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/flitbit/middles"
+  },
+  "bugs": {
+    "url": "https://github.com/flitbit/middles/issues"
+  },
+  "homepage": "https://github.com/flitbit/middles#readme"
 }

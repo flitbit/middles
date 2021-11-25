@@ -1,4 +1,3 @@
-releases/
-coverage/
+/**/*.js
 dist/
-docs/
+examples/

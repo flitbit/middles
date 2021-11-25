@@ -1,18 +1,24 @@
-const assert = require('assert-plus');
-const { Pipeline } = require('../dist');
+const assert = require('assert');
+const { Pipeline } = require('../');
 
-const final = async v => {
+const final = (v) => {
   console.log(`Final: ${v}`);
   return !v;
 };
 
-const toggle = v => {
+const toggle = (v) => {
   console.log(`Toggle: ${v}`);
   return !v;
 };
 
-(async () => {
-  const pipe = new Pipeline(final).add(toggle);
-  const res = await pipe.push(true);
-  console.log(`Last: ${res}`);
-})();
+// Pipeline operations are synchronous unless you call one of the async alternatives...
+const pipe = new Pipeline().add(toggle);
+const res = pipe.push(true, final);
+console.log(`Last: ${res}`);
+assert(res === true, 'value should be true');
+
+// Prints
+// =============
+// Toggle: true
+// Final: true
+// Last: true
