@@ -66,10 +66,10 @@ return res;
   );
 }
 
-/**
- * @ignore
- */
-type Prepared<T> = (item: T, processors: ProcessorLike<T>[]) => T | Promise<T>;
+export type Prepared<T> = (
+  item: T,
+  processors: ProcessorLike<T>[],
+) => T | Promise<T>;
 
 /**
  * Utility class for composing and executing simple processing pipelines.

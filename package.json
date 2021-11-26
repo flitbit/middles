@@ -15,7 +15,7 @@
     "dist"
   ],
   "scripts": {
-    "clean": "shx rm -rf coverage dist tmp docs",
+    "clean": "shx rm -rf coverage dist tmp docs reports",
     "prebuild": "shx rm -fr dist && npm run lint",
     "postbuild": "shx cp package-cjs.json dist/cjs/package.json && shx cp package-esm.json dist/esm/package.json",
     "build": "rollup -c ",
@@ -32,7 +32,7 @@
     "precibuild": "npm run cilint",
     "cibuild": "npm run buildall",
     "preci": "npm run cibuild",
-    "ci": "cross-env TS_NODE_COMPILER_OPTIONS='{ \"module\": \"commonjs\", \"noEmit\": false }' jest --config jest.ci.config.js --coverage",
+    "ci": "cross-env TS_NODE_COMPILER_OPTIONS='{ \"module\": \"commonjs\", \"noEmit\": false }' jest --coverage",
     "predocs": "shx rm -fr docs",
     "docs": "typedoc",
     "postdocs": "shx cp docs-overlay/* docs/",
