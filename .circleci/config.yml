@@ -26,7 +26,6 @@ commands:
           name: build & test
           command: npm run ci
           when: always
-      - run: ./node_modules/.bin/nyc report --report --reporter=text-lcov > coverage/lcov.info
       - run: bash <(curl -s https://codecov.io/bash)
       # Upload results
       - store_test_results:
