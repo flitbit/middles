@@ -1,5 +1,7 @@
 # middles
 
+[![CircleCI](https://circleci.com/gh/flitbit/middles/tree/master.svg?style=svg)](https://circleci.com/gh/flitbit/middles/tree/master) [![codecov](https://codecov.io/gh/flitbit/middles/branch/master/graph/badge.svg)](https://codecov.io/gh/flitbit/middles)
+
 Another small processing pipeline library for Nodejs.
 
 `middles` enables you to compose a processing pipeline out of synchronous and asynchronous processing functions. Later, you can push arguments into the pipeline, and those items are processed by each successive processor. After the pipeline runs, either the result of the final processor is returned, or an error is thrown.
