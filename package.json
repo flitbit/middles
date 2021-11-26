@@ -1,6 +1,6 @@
 {
   "name": "middles",
-  "version": "0.0.3",
+  "version": "1.0.0",
   "description": "Another small middleware pipeline library for Nodejs.",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
