@@ -4,6 +4,7 @@ logs
 npm-debug.log*
 node_modules/
 coverage
+reports
 dist/
 .vscode
 !.vscode/tasks.js
