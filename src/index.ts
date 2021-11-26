@@ -1,31 +1,41 @@
 import { AssertionError } from 'assert';
 
-const $middleware = Symbol('middleware');
+const $processor = Symbol('processor');
 const $prepared = Symbol('prepared');
 
-export type SyncMiddleware<T> = (it: T) => T;
-export type AsyncMiddleware<T> = (it: T) => Promise<T>;
-export type Middleware<T> = SyncMiddleware<T> | AsyncMiddleware<T>;
+/**
+ * A function that processes items of type T, and return a result of type T.
+ */
+export type Processor<T> = (it: T) => T;
+/**
+ * A function that asynchronously processes items of type T, and return a result of type Promise<T>.
+ */
+export type AsyncProcessor<T> = (it: T) => Promise<T>;
+export type ProcessorLike<T> = Processor<T> | AsyncProcessor<T>;
+
 export type Final<T, R> = (it: T) => R;
 export type AsyncFinal<T, R> = (it: T) => Promise<R>;
 
-type Step<T> = [boolean, Middleware<T>];
+/**
+ * @ignore
+ */
+type Step<T> = [boolean, ProcessorLike<T>];
 
-function prepareAsyncPipe<T>(middles: Step<T>[]): string {
+function prepareAsyncPipe<T>(processors: Step<T>[]): string {
   let body = `
 return (async () => {
   let res = item;
   `;
   let i = -1;
-  const len = middles.length;
+  const len = processors.length;
   while (++i < len) {
-    if (middles[i][0]) {
+    if (processors[i][0]) {
       body += `
-  res = await middles[${i}](res);
+  res = await processors[${i}](res);
 `;
     } else {
       body += `
-  res = middles[${i}](res);
+  res = processors[${i}](res);
 `;
     }
   }
@@ -37,15 +47,15 @@ return (async () => {
 `
   );
 }
-function preparePipe<T>(middles: Step<T>[]): string {
+function preparePipe<T>(processors: Step<T>[]): string {
   let body = `
 let res = item;
   `;
   let i = -1;
-  const len = middles.length;
+  const len = processors.length;
   while (++i < len) {
     body += `
-res = middles[${i}](res);
+res = processors[${i}](res);
 `;
   }
   return (
@@ -56,85 +66,99 @@ return res;
   );
 }
 
-type Prepared<T> = (item: T, middles: Middleware<T>[]) => T | Promise<T>;
+/**
+ * @ignore
+ */
+type Prepared<T> = (item: T, processors: ProcessorLike<T>[]) => T | Promise<T>;
 
 /**
- * Utility class for composing and executing simple middleware pipelines.
+ * Utility class for composing and executing simple processing pipelines.
  */
 export class Pipeline<T> {
-  private [$middleware]: Step<T>[];
-  private [$prepared]: [Prepared<T>, Middleware<T>[]];
+  /**
+   * @hidden
+   */
+  private [$processor]: Step<T>[];
+  /**
+   * @hidden
+   */
+  private [$prepared]: [Prepared<T>, ProcessorLike<T>[]];
+  /**
+   * Indicates whether the pipeline includes asynchronous processing.
+   *
+   * If `true`, items can only be pushed into the pipeline using the {@link pushAsync | .pushAsync() method}, otherwise, the pipeline is more efficiently invoked by the {@link push | .push() method}.
+   */
   public isAsync = false;
 
   /**
-   * Prepares a middleware function from the pipeline's steps.
-   * @returns An optimized middleware function; primarily from unrolling loops.
+   * Prepares an optimized processing function from the pipeline's processors.
+   * @returns An processing function optimized by unrolling loops.
    */
-  private prepared(): [Prepared<T>, Middleware<T>[]] {
+  private prepared(): [Prepared<T>, ProcessorLike<T>[]] {
     if (!this[$prepared]) {
-      const middles = this[$middleware]
-        ? this[$middleware].map((it) => it[1])
+      const processors = this[$processor]
+        ? this[$processor].map((it) => it[1])
         : [];
       this[$prepared] = [
         new Function(
           'item',
-          'middles',
+          'processors',
           this.isAsync
-            ? prepareAsyncPipe<T>(this[$middleware] || [])
-            : preparePipe(this[$middleware] || []),
+            ? prepareAsyncPipe<T>(this[$processor] || [])
+            : preparePipe(this[$processor] || []),
         ) as Prepared<T>,
-        middles,
+        processors,
       ];
     }
     return this[$prepared];
   }
 
   /**
-   * Adds a new middleware to the pipeline, returning a new immutable instance.
-   * @param middleware one or more middleware
-   * @returns an new pipeline that includes the specified middleware(s)
+   * Adds new synchronous processor to the pipeline, returning a new immutable instance.
+   * @param processor one or more {@link Processor}
+   * @returns an new pipeline that includes the specified processor(s)
    */
-  add(...middleware: SyncMiddleware<T>[]): Pipeline<T> {
-    const pipe = this[$middleware] ? this[$middleware].slice() : [];
-    for (const m of middleware) {
+  use(...processor: Processor<T>[]): Pipeline<T> {
+    const pipe = this[$processor] ? this[$processor].slice() : [];
+    for (const m of processor) {
       pipe.push([false, m]);
     }
     const res = new Pipeline<T>();
-    res[$middleware] = pipe;
+    res[$processor] = pipe;
     res.isAsync = this.isAsync;
     return res;
   }
 
   /**
-   * Adds a new middleware to the pipeline, returning a new immutable instance.
-   * @param middleware one or more middleware
-   * @returns an new pipeline that includes the specified middleware(s)
+   * Adds a new processor to the pipeline, returning a new immutable instance.
+   * @param processor one or more processor
+   * @returns an new pipeline that includes the specified processor(s)
    */
-  addAsync(...middleware: AsyncMiddleware<T>[]): Pipeline<T> {
-    const pipe = this[$middleware] ? this[$middleware].slice() : [];
-    for (const m of middleware) {
+  useAsync(...processor: AsyncProcessor<T>[]): Pipeline<T> {
+    const pipe = this[$processor] ? this[$processor].slice() : [];
+    for (const m of processor) {
       pipe.push([true, m]);
     }
     const res = new Pipeline<T>();
-    res[$middleware] = pipe;
+    res[$processor] = pipe;
     res.isAsync = true;
     return res;
   }
 
   /**
-   * Processes the specified item successively using each middleware function in the pipeline
+   * Processes the specified item successively using each processor function in the pipeline
    * @param item the item to be processed by the pipeline
    * @param final optional Final function that may transform the result
-   * @returns the result of middleware processing, or if a final function is specified, the transformed result
-   * @throws AssertionError if an asynchronous middleware was added to the pipeline
+   * @returns the result of processor processing, or if a final function is specified, the transformed result
+   * @throws AssertionError if an asynchronous processor was added to the pipeline
    * @throws AssertionError if final is specified as an invalid type
-   * @throws an error if thrown by any middleware during processing
+   * @throws an error if thrown by any processor during processing
    */
   push<R>(item: T, final?: Final<T, R>): T | R {
     if (this.isAsync)
       throw new AssertionError({
         message:
-          '.isAsync must be false, pipeline has async middleware; must use .pushAsync() instead.',
+          '.isAsync must be false, pipeline has an async processor; must use .pushAsync() instead.',
         expected: false,
         actual: true,
       });
@@ -146,17 +170,17 @@ export class Pipeline<T> {
         actual: typeof final,
       });
     }
-    const [pipe, middles] = this.prepared();
-    const it = pipe(item, middles) as T;
+    const [pipe, processors] = this.prepared();
+    const it = pipe(item, processors) as T;
     return final ? final(it) : it;
   }
 
   /**
-   * Processes the specified item successively using each middleware function in the pipeline
+   * Processes the specified item successively using each processor function in the pipeline
    * @param item the item to be processed by the pipeline
    * @param final optional Final function that may transform the result or rejects if an error is thrown during processing
    * @throws AssertionError if final is specified as an invalid type
-   * @throws an error if thrown by any middleware during processing
+   * @throws an error if thrown by any processor during processing
    */
   async pushAsync<R>(item: T, final?: AsyncFinal<T, R>): Promise<T | R> {
     if (final && typeof final !== 'function') {
@@ -167,8 +191,8 @@ export class Pipeline<T> {
         actual: typeof final,
       });
     }
-    const [pipe, middles] = this.prepared();
-    const it = (await pipe(item, middles)) as T;
+    const [pipe, processors] = this.prepared();
+    const it = (await pipe(item, processors)) as T;
     return final ? await final(it) : it;
   }
 }

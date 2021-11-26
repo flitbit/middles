@@ -35,27 +35,27 @@ describe('Pipeline', () => {
     });
 
     it('calls single middleware (synchronous)', () => {
-      const pipe = new Pipeline<number>().add(inc);
+      const pipe = new Pipeline<number>().use(inc);
       const res = pipe.push(1);
       expect(res).toBe(2);
     });
 
     it('throws when any async middleware (synchronous)', () => {
-      const pipe = new Pipeline<number>().add(inc).addAsync(incp);
+      const pipe = new Pipeline<number>().use(inc).useAsync(incp);
       expect(() => {
         const res = pipe.push(1);
         expect(res).toBe(3);
       }).toThrow(
-        'isAsync must be false, pipeline has async middleware; must use .pushAsync() instead.',
+        'isAsync must be false, pipeline has an async processor; must use .pushAsync() instead.',
       );
     });
     it('calls all middleware and the final', () => {
-      const pipe = new Pipeline<number>().add(inc, inc, inc);
+      const pipe = new Pipeline<number>().use(inc, inc, inc);
       const res = pipe.push(0, inc);
       expect(res).toBe(4);
     });
     it('throws when final not a function', () => {
-      const pipe = new Pipeline<number>().add(inc, inc, inc);
+      const pipe = new Pipeline<number>().use(inc, inc, inc);
       expect(() => {
         const res = pipe.push(0, 9 as unknown as Final<number, unknown>);
         expect(res).toBe(4);
@@ -73,24 +73,24 @@ describe('Pipeline', () => {
     });
 
     it('calls single middleware (asynchronous)', async () => {
-      const pipe = new Pipeline<number>().addAsync(incp);
+      const pipe = new Pipeline<number>().useAsync(incp);
       const res = await pipe.pushAsync(1);
       expect(res).toBe(2);
     });
 
     it('calls all middleware and the final', async (): Promise<void> => {
       const pipe = new Pipeline<number>()
-        .add(inc)
-        .add(inc)
-        .add(inc)
-        .addAsync(incp)
-        .add(inc)
-        .add(inc);
+        .use(inc)
+        .use(inc)
+        .use(inc)
+        .useAsync(incp)
+        .use(inc)
+        .use(inc);
       const res = await pipe.pushAsync(0, incp);
       expect(res).toBe(7);
     });
     it('throws when final not a function', async (): Promise<void> => {
-      const pipe = new Pipeline<number>().addAsync(incp).add(inc).add(inc);
+      const pipe = new Pipeline<number>().useAsync(incp).use(inc).use(inc);
       await expect(async () => {
         const res = await pipe.pushAsync(
           0,
@@ -105,20 +105,20 @@ describe('Pipeline', () => {
     it('propagates any error to the caller (2)', async (): Promise<void> => {
       await expect(async () => {
         const pipe = new Pipeline<number>()
-          .add(click)
-          .add(click)
-          .add(boom)
-          .add(click)
-          .add(click)
-          .add(click);
+          .use(click)
+          .use(click)
+          .use(boom)
+          .use(click)
+          .use(click)
+          .use(click);
         await pipe.pushAsync(0, incp);
       }).rejects.toThrow('boom 2');
     });
     it('propagates any error to the caller (final)', async (): Promise<void> => {
       await expect(async () => {
         const pipe = new Pipeline<number>()
-          .add(click, click, click, click, click)
-          .addAsync(clickp);
+          .use(click, click, click, click, click)
+          .useAsync(clickp);
         await pipe.pushAsync(0, boomp);
       }).rejects.toThrow('boom 6');
     });

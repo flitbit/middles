@@ -16,7 +16,8 @@
   ],
   "scripts": {
     "clean": "shx rm -rf coverage dist tmp docs",
-    "prebuild": "npm run lint",
+    "prebuild": "shx rm -fr dist && npm run lint",
+    "postbuild": "shx cp package-cjs.json dist/cjs/package.json && shx cp package-esm.json dist/esm/package.json",
     "build": "rollup -c ",
     "build:watch": "rollup -c -w",
     "buildall": "npm run build && npm run docs",
@@ -32,8 +33,10 @@
     "cibuild": "npm run buildall",
     "preci": "npm run cibuild",
     "ci": "cross-env TS_NODE_COMPILER_OPTIONS='{ \"module\": \"commonjs\", \"noEmit\": false }' jest --config jest.ci.config.js --coverage",
-    "docs": "typedoc && shx cp _config.yml docs/",
-    "docs:watch": "onchange --initial \"*.md\" \"src/**/*.ts\" --npm run docs"
+    "predocs": "shx rm -fr docs",
+    "docs": "typedoc",
+    "postdocs": "shx cp docs-overlay/* docs/",
+    "docs:watch": "onchange --initial \"*.md\" \"src/**/*.ts\" -- npm run docs"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^21.0.1",

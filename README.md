@@ -1,8 +1,8 @@
 # middles
 
-Another small middleware pipeline library for Nodejs.
+Another small processing pipeline library for Nodejs.
 
-`middles` exposes one type, a `Pipeline` object, with which you can construct a processing pipeline out of synchronous and asynchronous middleware functions. Later, you can push arguments into the pipeline, and those items are processed by each successive middleware. After the pipeline runs, either the result of the final middleware function is returned to the caller, or any processing error is thrown.
+`middles` enables you to compose a processing pipeline out of synchronous and asynchronous processing functions. Later, you can push arguments into the pipeline, and those items are processed by each successive processor. After the pipeline runs, either the result of the final processor is returned, or an error is thrown.
 
 ## Install
 
@@ -22,7 +22,7 @@ import { Pipeline } from 'middles';
 
 ## Use
 
-A pipeline is a sequence of processing steps. Each item subsequently pushed onto the pipe, is processed by each step, in the order in which the steps were added.
+A pipeline is a sequence of processing steps. Each item pushed onto the pipe, is processed by each step, in the order in which the steps were added.
 
 ```ts
 import { Pipeline } from 'middles';
@@ -32,11 +32,21 @@ const magnitude = (n: number): number => n * 10;
 const half = (n: number): number => n >> 1;
 
 const contrived = new Pipeline()
-	.add(doubled)
-	.add(magnitude)
-	.add(magnitude)
-	.add(half)
-	.add(doubled);
+	.use(doubled)
+	.use(magnitude)
+	.use(magnitude)
+	.use(half)
+	.use(doubled);
 
 const res = contrived.push(3);
 ```
+
+### Good Practice
+
+Well written, highly composable processors should exhibit these characteristics:
+
+- distrusts inputs
+- only proceeds if it can succeed (fail-fast)
+- seldom preserves state (prefer stateless behaviors)
+- performs a single responsibility
+- strive for deterministic behavior
